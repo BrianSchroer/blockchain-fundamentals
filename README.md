@@ -1,2 +1,2 @@
 # react-fundamentals
-Following along with Pluralsight React Fundamentals course
+Following along with Pluralsight Blockchain Fundamentals course
