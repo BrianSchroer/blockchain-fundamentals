@@ -1,6 +1,8 @@
 import '../stylesheets/app.css';
 import { default as Web3 } from 'web3';
 import { default as contract } from 'truffle-contract';
+import './browser-solc.js';
+
 var accounts;
 var account;
 var foodSafeAbi;
@@ -28,12 +30,19 @@ window.App = {
       // FoodSafe.sol contents without line breaks:
       var foodSafeSource = "pragma solidity ^0.4.17; contract FoodSafe { struct Location { string name; uint locationId; uint previousLocationId; uint timestamp; string secret; } mapping(uint => Location) Trail; uint8 TrailCount = 0; function addNewLocation(uint locationId, string name, string secret) public { Location memory newLocation; newLocation.name = name; newLocation.locationId = locationId; newLocation.timestamp = now; newLocation.secret = secret; if (TrailCount > 0) { newLocation.previousLocationId = Trail[TrailCount - 1].locationId; } Trail[TrailCount] = newLocation; TrailCount++; } function getTrailCount() public view returns(uint8) { return TrailCount; } function getLocation(uint8 trailNumber) public view returns(string, uint, uint, uint, string) { return (Trail[trailNumber].name, Trail[trailNumber].locationId, Trail[trailNumber].previousLocationId, Trail[trailNumber].timestamp, Trail[trailNumber].secret); } } ";
 
-      web3.eth.compile.solidity(foodSafeSource, function (error, foodSafeCompiled) {
-        console.log(error);
-        console.log(foodSafeCompiled);
-        foodSafeAbi = foodSafeCompiled['<stdin>:FoodSafe'].info.abiDefinition; // ABI = application binary interface
-        foodSafeContract = web.eth.contract(foodSafeAbi);
-        foodSafeCode = foodSafeCompiled['<stdin>:FoodSafe'].code;
+      // Get a list of all possible solc versions so we can paste one appropriate for the foodSafeSource pragma 
+      // into the BrowserSolc.loadVersion call below...
+      // BrowserSolc.getVersions(function (soljsonSources, soljsonReleases) {
+      //   console.log(soljsonSources);
+      //   console.log(soljsonReleases);
+      // });
+
+      BrowserSolc.loadVersion('soljson-v0.4.17+commit.bdeb9e52.js', function (compiler) {
+        var foodSafeCompiled = compiler.compile(foodSafeSource, /*optimize:*/ 1);
+        var contract = foodSafeCompiled.contracts[':FoodSafe'];
+        foodSafeAbi = JSON.parse(contract.interface);
+        foodSafeContract = web3.eth.contract(foodSafeAbi);
+        foodSafeCode = contract.bytecode;
       });
     });
   },
